@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreMovieRequest;
 use App\Http\Requests\UpdateMovieRequest;
 use App\Http\Resources\MovieResource;
-use App\Models\Genre;
 use App\Models\Movie;
 use Illuminate\Http\Request;
 
@@ -21,21 +20,7 @@ class MovieController extends Controller
         $perPage = $request->input('perPage') ? $request->input('perPage') : 8;
         $skip = $page * $perPage - $perPage;
 
-        // if ($request->genre) {
-        //     $movies = Genre::where('title', $request->genre)->take($perPage)->skip($skip)->get();
-        // }
-        // // $serach = $request->input('search') ? $request->input('search') : null;
-        // if ($request->search) {
-        //     if ($movies) {
-        //         $movies = $movies::where();
-        //     } else {
-        //         $movies = Movie::take($perPage)->skip($skip)->where('title', 'like', '%' . request('search') . '%')->get();
-        //     }
-        // }
-        // if (!$movies) {
-        //     $movies = Movie::take($perPage)->skip($skip)->get();
-        // }
-        $query = Movie::query();
+        $query = Movie::query()->take($perPage)->skip($skip);
 
         // Filter by title
         if ($request->has('search')) {
@@ -44,6 +29,7 @@ class MovieController extends Controller
 
         // Filter by genre
         if ($request->has('genre')) {
+
             $query->whereHas('genres', function ($query) use ($request) {
                 $query->where('title', $request->input('genre'));
             });
@@ -89,7 +75,12 @@ class MovieController extends Controller
      */
     public function show($id)
     {
-        return new MovieResource(Movie::find($id));
+        $movie =  Movie::find($id);
+
+        if (!$movie) {
+            return response()->json(['message' => 'Movie not found'], 404);
+        }
+        return new MovieResource($movie);
     }
 
     /**
@@ -103,16 +94,22 @@ class MovieController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateMovieRequest $request, Movie $movie)
+    public function update(UpdateMovieRequest $request, $id)
     {
-        //
+        $validatedData = $request->validated();
+
+        $movie = new MovieResource(Movie::find($id));
+        $movie->update($validatedData);
+        return response()->json(['status' => 'Movie updated successfully!']);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Movie $movie)
+    public function destroy($id)
     {
-        //
+        $deleted = Movie::destroy($id);
+
+        return !$deleted ?  response()->json(['message' => 'Movie does not exist']) :  response()->json(['message' => 'Movie deleted']);
     }
 }

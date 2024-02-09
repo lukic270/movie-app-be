@@ -11,7 +11,7 @@ class UpdateMovieRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,11 @@ class UpdateMovieRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'title' => 'string|min:2|max:100',
+            'description' => 'string|min:10',
+            'author' => 'min:2|max:100',
+            'duration' => 'integer|min:60|max:180',
+            'poster_url' => 'url'
         ];
     }
 }
